@@ -1,0 +1,60 @@
+Here's a snapshot of the FreeBSD 8.1-based FreeNAS.  It features a move to
+the /etc/rc.d startup scripting, a move to a Django-based GUI and should
+set the stage for a more modular system in the future.
+
+This snapshot is for developers and very experienced users only.  It
+is not functionally complete yet, and there are likely many rough
+edges.  The code is of alpha quality.  It has no safeguards against
+accidentally initializing a previously configured volume, zpool or
+raid mirror.  No support for software raid exists in this release
+(only single disks and zfs).  There's no upgrade path for this
+snapshot (no conversion from old releases, no in-place firmware
+upgrades like FreeNAS 0.7 and earlier had, etc).  There is no way to
+import old volumes.  This snapshot should be viewed as a technology
+preview only.
+
+The GUI is currently incomplete.  You can configure your network
+address, some misc system configuration, ssh, ftp, tftp, cifs/samba,
+afp, smnp and nfs.  All the GUI screens should work at least to the
+point of saving the data to the database.
+
+The GUI should behave basically the same as 0.7's GUI, but there are
+some differences.  The biggest differences are in configuring disks.
+You need to add one of the disks (there's no safeguards against adding
+the same disk multiple times, adding the system disk, etc).  Once you
+add the disk to the system via the GUI, you need to create a disk
+group (even for groups of 1).  Then you can create a volume that is
+the basis for all further things in the system.
+
+The GUI does not yet replicate the file chooser functionality for
+pathnames that the old system had.  You'll have to type the path.
+
+To build the system (experts only):
+
+Native builds on amd64 and i386 work.  Cross building i386 on amd64 currently
+fails.
+
+To build the system:
+
+(1) Checkout the experimental code from svn:
+
+% svn https://freenas.svn.sourceforge.net/experimental/ix
+% cd ix
+
+(2) Use the build script (substituting your favorite cvsup mirror)
+
+% setenv FREEBSD_CVSUP_HOST cvsup10.freebsd.org
+% sudo sh build/do_build.sh
+% sudo sh build/do_build.sh -b
+
+That's it.  If you are rebuilding, just use the last line of #2.
+When updating source patches and/or ports, you may need to some
+additional steps by hand.  The above is known to work on a FreeBSD
+8.1R system, FreeBSD 8-stable and has in the past worked on a
+FreeBSD-current system.
+
+Once (2) completes, you'll have an image in
+obj.yyyy/FreeNAS-8rXXXX-yyyy.full where XXXX is the svn revision from
+the freenas repo, and yyyy is either i386 or amd64 depending on your
+platform.  This is a raw disk image, and needs to be converted to your
+favorite VM container format before use...

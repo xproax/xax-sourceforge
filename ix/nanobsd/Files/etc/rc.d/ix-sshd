@@ -1,0 +1,69 @@
+#!/bin/sh
+#
+# $FreeBSD$
+#
+
+# PROVIDE: ix-sshd
+# REQUIRE: FILESYSTEMS
+# BEFORE: sshd
+
+. /etc/rc.subr
+
+#
+# TODO: this is really just a place holder for the moment....
+#
+generate_sshd()
+{
+    local IFS=\|
+    local f="ssh_tcpport ssh_rootlogin ssh_passwordauth ssh_tcpfwd ssh_compression ssh_options"
+    eval local $f
+    local cmd sf cfg
+    sf=$(echo $f | sed -e 's/ /, /g')
+    cfg=/etc/ssh/sshd_config
+    ${FREENAS_SQLITE_CMD} ${FREENAS_CONFIG} \
+	"SELECT $sf FROM services_ssh ORDER BY -id LIMIT 1" | \
+	while eval read $f; do
+	    cat > $cfg <<EOF
+SyslogFacility LOCAL3
+Protocol 2
+UseDNS no
+Subsystem       sftp    /usr/libexec/sftp-server
+ChallengeResponseAuthentication no
+EOF
+	    if [ $ssh_tcpport -gt 0 ]; then
+		echo "Port $ssh_tcpport" >> $cfg
+	    fi
+	    if [ $ssh_rootlogin = 1 ]; then
+		echo "PermitRootLogin yes" >> $cfg
+	    else
+		echo "PermitRootLogin without-password" >> $cfg
+	    fi
+	    if [ $ssh_tcpfwd = 1 ]; then
+		echo "AllowTcpForwarding yes" >> $cfg
+	    else
+		echo "AllowTcpForwarding no" >> $cfg
+	    fi
+	    if [ $ssh_compression = 1 ]; then
+		echo "Compression delayed" >> $cfg
+	    else
+		echo "Compression no" >> $cfg
+	    fi
+	    if [ $ssh_passwordauth = 1 ]; then
+		echo "PasswordAuthentication yes" >> $cfg
+	    fi
+	    ssh_pubkeyauth=1		# Missing in schema
+	    if [ $ssh_pubkeyauth = 1 ]; then
+		echo "PubkeyAuthentication yes" >> $cfg
+	    fi
+	    if [ -n "$ssh_options" ]; then
+		echo "$ssh_options" >> $cfg
+	    fi
+    done
+}
+
+name="ix-sshd"
+start_cmd='generate_sshd'
+stop_cmd=':'
+
+load_rc_config $name
+run_rc_command "$1"

@@ -1,2 +1,0 @@
-Create patch:
-diff -ruN geom_eli.c.orig geom_eli.c > geom_eli.c.diff
